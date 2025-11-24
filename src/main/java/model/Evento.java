@@ -1,55 +1,30 @@
 package model;
 
 import java.time.LocalDateTime;
-// Importa a classe da View para acessar o formatador de data estático
-import view.SistemaEventosApp;
 
-// Classe que representa a entidade Evento.
-public class Evento {
-
-    private int id;
-    private String nome;
-    private String endereco;
-    private CategoriaEvento categoria;
-    private LocalDateTime dataHora; // Usa o tipo moderno de data e hora
-    private String descricao;
-
-    // Construtor completo (usado ao carregar do BD)
-    public Evento(int id, String nome, String endereco, CategoriaEvento categoria, LocalDateTime dataHora, String descricao) {
-        this.id = id;
-        this.nome = nome;
-        this.endereco = endereco;
-        this.categoria = categoria;
-        this.dataHora = dataHora;
-        this.descricao = descricao;
+/**
+ * Classe de modelo (POJO) que representa um evento.
+ * Implementada como um objeto imutável (campos final e sem setters)
+ * para garantir a consistência dos dados após a criação ou recuperação.
+ *
+ * @param organizadorId ID do usuário que criou o evento
+ */
+public record Evento(int id, String nome, CategoriaEvento categoria, LocalDateTime dataHora, String local,
+                     int capacidade, int organizadorId, String descricao) {
+    /**
+     * Construtor completo para mapeamento de resultados do banco de dados.
+     *
+     * @param id            O ID único do evento.
+     * @param nome          O nome do evento.
+     * @param categoria     A categoria do evento (usa o enum CategoriaEvento).
+     * @param dataHora      A data e hora do evento.
+     * @param local         O local onde o evento ocorrerá.
+     * @param capacidade    O número máximo de participantes.
+     * @param organizadorId O ID do usuário organizador.
+     * @param descricao     A descrição detalhada do evento.
+     */
+    public Evento {
     }
 
-    // Construtor sem ID (usado ao cadastrar novo evento)
-    public Evento(String nome, String endereco, CategoriaEvento categoria, LocalDateTime dataHora, String descricao) {
-        this.id = 0;
-        this.nome = nome;
-        this.endereco = endereco;
-        this.categoria = categoria;
-        this.dataHora = dataHora;
-        this.descricao = descricao;
-    }
-
-    // Métodos Getters
-    public int getId() { return id; }
-    public String getNome() { return nome; }
-    public String getEndereco() { return endereco; }
-    public CategoriaEvento getCategoria() { return categoria; }
-    public LocalDateTime getDataHora() { return dataHora; }
-    public String getDescricao() { return descricao; }
-
-    @Override
-    public String toString() {
-        // Usa o formatador estático da View para garantir a formatação de data consistente
-        return "ID: " + id +
-                " | Nome: " + nome +
-                " | Local: " + endereco +
-                " | Categoria: " + categoria +
-                " | Horário: " + dataHora.format(SistemaEventosApp.USER_FORMATTER_FOR_OUTPUT) +
-                " | Descrição: " + descricao;
-    }
+    // --- Getters (Padrão POJO/Java) ---
 }

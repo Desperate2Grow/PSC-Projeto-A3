@@ -1,259 +1,191 @@
 package dao;
 
-import model.Evento;
 import model.CategoriaEvento;
-import model.Usuario;
+import model.Evento;
+import util.DatabaseConnection;
+
 import java.sql.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-// Data Access Object (DAO) responsável pela comunicação direta com o banco de dados SQLite.
+/**
+ * DAO (Data Access Object) para a entidade Evento.
+ * Gerencia a comunicação entre a aplicação e a tabela 'Eventos' no banco de dados.
+ */
 public class EventoDAO {
 
-    // Formatador auxiliar para lidar com formatos de data SQL legados ou padrão
-    private static final DateTimeFormatter OLD_SQL_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    /**
+     * Cria um novo evento no banco de dados.
+     * @param evento O objeto Evento a ser criado (ID é -1 no objeto, será gerado pelo DB).
+     * @return O ID gerado para o novo evento ou -1 em caso de falha.
+     */
+    public int criarEvento(Evento evento) {
+        String sql = "INSERT INTO Eventos (nome, categoria, data_hora, local, capacidade, organizador_id, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-    // Método que estabelece a conexão com o banco de dados (database/banco.db)
-    private Connection getConnection() throws SQLException {
-        Connection conn = DriverManager.getConnection("jdbc:sqlite:database/banco.db");
-        // SOLUÇÃO CRUCIAL CONTRA [SQLITE_BUSY]: Força o commit automático para liberar o lock imediatamente.
-        conn.setAutoCommit(true);
-        return conn;
-    }
+            // Uso dos getters do POJO
+            stmt.setString(1, evento.nome());
+            stmt.setString(2, evento.categoria().name()); // Salva o nome da enum
+            stmt.setTimestamp(3, Timestamp.valueOf(evento.dataHora()));
+            stmt.setString(4, evento.local());
+            stmt.setInt(5, evento.capacidade());
+            stmt.setInt(6, evento.organizadorId());
+            stmt.setString(7, evento.descricao());
 
-    // Cria as tabelas se elas ainda não existirem.
-    public void inicializarBD() {
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-
-            // Criação da tabela Eventos
-            stmt.execute("CREATE TABLE IF NOT EXISTS Eventos (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "nome TEXT NOT NULL, " +
-                    "endereco TEXT NOT NULL, " +
-                    "categoria TEXT NOT NULL, " +
-                    "horario TEXT NOT NULL, " +
-                    "descricao TEXT)");
-
-            // Tabela Usuarios (email com restrição UNIQUE)
-            stmt.execute("CREATE TABLE IF NOT EXISTS Usuarios (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "nome TEXT NOT NULL, " +
-                    "email TEXT NOT NULL UNIQUE, " +
-                    "senha TEXT NOT NULL)");
-
-            // Tabela N:M para participação
-            stmt.execute("CREATE TABLE IF NOT EXISTS Participacao (" +
-                    "usuario_id INTEGER NOT NULL, " +
-                    "evento_id INTEGER NOT NULL, " +
-                    "PRIMARY KEY (usuario_id, evento_id)," +
-                    "FOREIGN KEY (usuario_id) REFERENCES Usuarios(id)," +
-                    "FOREIGN KEY (evento_id) REFERENCES Eventos(id))");
-
-            System.out.println("-> [DAO] Estrutura do BD verificada/criada com sucesso.");
-
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1); // Retorna o ID gerado
+                    }
+                }
+            }
         } catch (SQLException e) {
-            System.err.println("Erro ao inicializar o DAO e as tabelas: " + e.getMessage());
+            System.err.println("Erro ao criar evento: " + e.getMessage());
         }
+        return -1; // Falha na criação
     }
 
-    // Insere um novo Evento
-    public void inserirEvento(Evento evento) {
-        String sql = "INSERT INTO Eventos (nome, endereco, categoria, horario, descricao) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    /**
+     * Busca um evento pelo seu ID.
+     * @param id O ID do evento.
+     * @return O objeto Evento, ou null se não for encontrado.
+     */
+    public Evento getEventoPorId(int id) {
+        String sql = "SELECT * FROM Eventos WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, evento.getNome());
-            pstmt.setString(2, evento.getEndereco());
-            pstmt.setString(3, evento.getCategoria().toString());
-            pstmt.setString(4, evento.getDataHora().toString());
-            pstmt.setString(5, evento.getDescricao());
+            stmt.setInt(1, id);
 
-            pstmt.executeUpdate();
-            System.out.println("-> [DAO] Evento cadastrado com sucesso!");
-
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToEvento(rs);
+                }
+            }
         } catch (SQLException e) {
-            System.err.println("Erro ao salvar evento no BD: " + e.getMessage());
+            System.err.println("Erro ao buscar evento por ID: " + e.getMessage());
         }
+        return null;
     }
 
-    // Lista todos os eventos
+    /**
+     * Lista todos os eventos.
+     * @return Uma lista de objetos Evento.
+     */
     public List<Evento> listarTodosEventos() {
         List<Evento> eventos = new ArrayList<>();
-        String sql = "SELECT * FROM Eventos";
-
-        try (Connection conn = getConnection();
+        // Ordena por data_hora (os mais próximos/futuros primeiro)
+        String sql = "SELECT * FROM Eventos ORDER BY data_hora ASC";
+        try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-
-                String horarioString = rs.getString("horario");
-                LocalDateTime dataHora;
-
-                // Trata possíveis formatos de data existentes no banco
-                try {
-                    dataHora = LocalDateTime.parse(horarioString, OLD_SQL_FORMATTER);
-                } catch (DateTimeParseException e) {
-                    dataHora = LocalDateTime.parse(horarioString);
-                }
-
-                Evento evento = new Evento(
-                        rs.getInt("id"),
-                        rs.getString("nome"),
-                        rs.getString("endereco"),
-                        CategoriaEvento.valueOf(rs.getString("categoria")),
-                        dataHora,
-                        rs.getString("descricao")
-                );
-                eventos.add(evento);
+                eventos.add(mapResultSetToEvento(rs));
             }
         } catch (SQLException e) {
-            System.err.println("Erro ao carregar eventos do BD: " + e.getMessage());
+            System.err.println("Erro ao listar todos os eventos: " + e.getMessage());
         }
         return eventos;
     }
 
-    // Insere um novo Usuário
-    public void inserirUsuario(Usuario usuario) {
-        String sql = "INSERT INTO Usuarios (nome, email, senha) VALUES (?, ?, ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    /**
+     * Lista todos os eventos organizados por um usuário específico.
+     * @param organizadorId O ID do usuário organizador.
+     * @return Uma lista de objetos Evento.
+     */
+    public List<Evento> listarEventosPorOrganizador(int organizadorId) {
+        List<Evento> eventos = new ArrayList<>();
+        String sql = "SELECT * FROM Eventos WHERE organizador_id = ? ORDER BY data_hora ASC";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, usuario.getNome());
-            pstmt.setString(2, usuario.getEmail());
-            pstmt.setString(3, usuario.getSenha());
-            pstmt.executeUpdate();
-            System.out.println("-> [DAO] Usuário cadastrado com sucesso!");
-        } catch (SQLException e) {
-            System.err.println("Erro ao salvar usuário no BD: " + e.getMessage());
-        }
-    }
+            stmt.setInt(1, organizadorId);
 
-    // Busca um usuário pelo email (essencial para a função de login)
-    public Usuario buscarUsuarioPorEmail(String email) {
-        String sql = "SELECT id, nome, email, senha FROM Usuarios WHERE email = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, email);
-
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) {
-                    // Usuário encontrado
-                    return new Usuario(
-                            rs.getInt("id"),
-                            rs.getString("nome"),
-                            rs.getString("email"),
-                            rs.getString("senha")
-                    );
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    eventos.add(mapResultSetToEvento(rs));
                 }
             }
         } catch (SQLException e) {
-            System.err.println("Erro ao buscar usuário por email: " + e.getMessage());
+            System.err.println("Erro ao listar eventos por organizador: " + e.getMessage());
         }
-        return null; // Retorna null se não encontrar
+        return eventos;
     }
 
-    // Registra a participação
-    public void confirmarParticipacao(int eventoId, Usuario usuario) {
-        String sql = "INSERT INTO Participacao (usuario_id, evento_id) VALUES (?, ?)";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+    /**
+     * NOVO: Lista todos os eventos nos quais um usuário está inscrito.
+     * @param userId O ID do usuário inscrito.
+     * @return Uma lista de objetos Evento.
+     */
+    public List<Evento> listarEventosInscritosPorUsuario(int userId) {
+        List<Evento> eventos = new ArrayList<>();
+        // Query de junção entre Eventos e a tabela de participação
+        String sql = "SELECT e.* FROM Eventos e " +
+                "JOIN participacao p ON e.id = p.evento_id " +
+                "WHERE p.usuario_id = ? " +
+                "ORDER BY e.data_hora ASC";
 
-            pstmt.setInt(1, usuario.getId());
-            pstmt.setInt(2, eventoId);
-            pstmt.executeUpdate();
-            System.out.println("-> [DAO] Participação confirmada para Evento ID: " + eventoId + " pelo usuário " + usuario.getNome());
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        } catch (SQLException e) {
-            System.err.println("Erro ao confirmar participação: " + e.getMessage());
-        }
-    }
+            stmt.setInt(1, userId);
 
-    // Cancela a participação
-    public void cancelarParticipacao(int eventoId, int usuarioId) {
-        String sql = "DELETE FROM Participacao WHERE usuario_id = ? AND evento_id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setInt(1, usuarioId);
-            pstmt.setInt(2, eventoId);
-            int rowsAffected = pstmt.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("-> [DAO] Participação cancelada com sucesso!");
-            } else {
-                System.out.println("-> [DAO] Participação não encontrada ou já cancelada.");
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    eventos.add(mapResultSetToEvento(rs));
+                }
             }
         } catch (SQLException e) {
-            System.err.println("Erro ao cancelar participação: " + e.getMessage());
+            System.err.println("Erro ao listar eventos inscritos por usuário: " + e.getMessage());
         }
+        return eventos;
     }
 
-    // Exclusão de Evento (remove participações e o evento)
-    public void deletarEvento(int eventoId) {
-        // 1. Excluir todas as participações primeiro (chave estrangeira)
-        String sqlDeleteParticipacao = "DELETE FROM Participacao WHERE evento_id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmtParticipacao = conn.prepareStatement(sqlDeleteParticipacao)) {
 
-            pstmtParticipacao.setInt(1, eventoId);
-            pstmtParticipacao.executeUpdate();
-            System.out.println("-> [DAO] Participações associadas ao Evento ID " + eventoId + " excluídas.");
-        } catch (SQLException e) {
-            System.err.println("Erro ao excluir participações do evento: " + e.getMessage());
-            return;
-        }
+    /**
+     * Deleta um evento do banco de dados.
+     * A deleção em cascata (ON DELETE CASCADE) na tabela 'participacao' garante
+     * que todas as inscrições relacionadas a este evento sejam removidas.
+     * @param id O ID do evento a ser deletado.
+     * @return true se a deleção foi bem sucedida, false caso contrário.
+     */
+    public boolean deletarEvento(int id) {
+        String sql = "DELETE FROM Eventos WHERE id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        // 2. Excluir o Evento
-        String sqlDeleteEvento = "DELETE FROM Eventos WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmtEvento = conn.prepareStatement(sqlDeleteEvento)) {
+            stmt.setInt(1, id);
+            int affectedRows = stmt.executeUpdate();
 
-            pstmtEvento.setInt(1, eventoId);
-            int rowsAffected = pstmtEvento.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("✅ [DAO] Evento ID " + eventoId + " excluído com sucesso!");
-            } else {
-                System.out.println("-> [DAO] Evento ID " + eventoId + " não encontrado.");
-            }
+            return affectedRows > 0;
+
         } catch (SQLException e) {
             System.err.println("Erro ao deletar evento: " + e.getMessage());
         }
+        return false;
     }
 
-    // Exclusão de Usuário (remove participações e o usuário)
-    public void deletarUsuario(int usuarioId) {
-        // 1. Excluir todas as participações
-        String sqlDeleteParticipacao = "DELETE FROM Participacao WHERE usuario_id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmtParticipacao = conn.prepareStatement(sqlDeleteParticipacao)) {
 
-            pstmtParticipacao.setInt(1, usuarioId);
-            pstmtParticipacao.executeUpdate();
-            System.out.println("-> [DAO] Participações do usuário ID " + usuarioId + " excluídas.");
-        } catch (SQLException e) {
-            System.err.println("Erro ao excluir participações do usuário: " + e.getMessage());
-            return;
-        }
-
-        // 2. Excluir o usuário
-        String sqlDeleteUsuario = "DELETE FROM Usuarios WHERE id = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement pstmtUsuario = conn.prepareStatement(sqlDeleteUsuario)) {
-
-            pstmtUsuario.setInt(1, usuarioId);
-            int rowsAffected = pstmtUsuario.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("-> [DAO] Usuário ID " + usuarioId + " excluído com sucesso!");
-            } else {
-                System.out.println("-> [DAO] Usuário ID " + usuarioId + " não encontrado.");
-            }
-        } catch (SQLException e) {
-            System.err.println("Erro ao deletar usuário: " + e.getMessage());
-        }
+    /**
+     * Mapeia um ResultSet para um objeto Evento, usando o construtor completo.
+     * @param rs ResultSet contendo os dados do evento.
+     * @return Objeto Evento populado.
+     * @throws SQLException Se ocorrer um erro de acesso ao banco de dados.
+     */
+    private Evento mapResultSetToEvento(ResultSet rs) throws SQLException {
+        // Uso do construtor completo do POJO para criar a instância.
+        return new Evento(
+                rs.getInt("id"),
+                rs.getString("nome"),
+                CategoriaEvento.valueOf(rs.getString("categoria")),
+                rs.getTimestamp("data_hora").toLocalDateTime(),
+                rs.getString("local"),
+                rs.getInt("capacidade"),
+                rs.getInt("organizador_id"),
+                rs.getString("descricao")
+        );
     }
 }

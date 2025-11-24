@@ -1,39 +1,35 @@
 package model;
 
-// Classe que representa a entidade Usuario no sistema.
-public class Usuario {
+/**
+ * Representa um usuário no sistema (participante, organizador ou administrador).
+ * Implementada como um POJO imutável (todos os campos são final e não há setters)
+ * para maior segurança, exceto pelo ID (que é final, sendo ajustado apenas via construtor).
+ *
+ * @param senha Armazenada como texto simples para simplificar (idealmente seria um hash)
+ */
+public record Usuario(int id, String nome, String email, String senha, boolean isAdmin) {
 
-    // Atributos privados do usuário
-    private int id;
-    private String nome;
-    private String email;
-    private String senha;
-
-    // Construtor completo, usado geralmente ao recuperar dados do BD
-    public Usuario(int id, String nome, String email, String senha) {
-        this.id = id;
-        this.nome = nome;
-        this.email = email;
-        this.senha = senha;
+    /**
+     * Construtor completo.
+     *
+     * @param id      O ID único do usuário.
+     * @param nome    O nome completo do usuário.
+     * @param email   O email único (usado para login).
+     * @param senha   A senha do usuário (texto simples).
+     * @param isAdmin Verdadeiro se o usuário for administrador.
+     */
+    public Usuario {
     }
 
-    // Construtor sem ID, usado ao criar um novo usuário (o BD gera o ID)
-    public Usuario(String nome, String email, String senha) {
-        this.id = 0;
-        this.nome = nome;
-        this.email = email;
-        this.senha = senha;
-    }
+    // --- Getters (Padrão POJO/Java) ---
 
-    // Métodos Getters (Acesso de leitura aos atributos)
-    public int getId() { return id; }
-    public String getNome() { return nome; }
-    public String getEmail() { return email; }
-    public String getSenha() { return senha; }
-
-    // Representação do objeto em string
+    /**
+     * Acessor no padrão Java para booleanos (método isXyz()).
+     *
+     * @return true se o usuário for administrador.
+     */
     @Override
-    public String toString() {
-        return "Usuário: " + nome + " (" + email + "), ID: " + id;
+    public boolean isAdmin() {
+        return isAdmin;
     }
 }

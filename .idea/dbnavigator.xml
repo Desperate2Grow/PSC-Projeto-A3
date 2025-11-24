@@ -5,7 +5,7 @@
     <preferences />
   </component>
   <component name="DBNavigator.Project.DataEditorManager">
-    <record-view-column-sorting-type value="BY_INDEX" />
+    <record-view-column-sorting-type value="ALPHABETICAL" />
     <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
@@ -25,6 +25,7 @@
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="aabfcd83-8536-4854-bc70-d139836d2679">
       <console name="SistemaEventos_SQLite" type="STANDARD" schema="main" session="Main"><![CDATA[SELECT * FROM Usuarios;]]></console>
+      <console name="SistemaEventos_SQLite 1" type="STANDARD" schema="main" session="Main"><![CDATA[Select * from usuario;]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
@@ -34,7 +35,9 @@
     <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
-    <connection id="aabfcd83-8536-4854-bc70-d139836d2679" />
+    <connection id="aabfcd83-8536-4854-bc70-d139836d2679">
+      <session name="Session 1" id="1208d53b-ac2d-4609-8e48-f58657ec7325" />
+    </connection>
   </component>
   <component name="DBNavigator.Project.DatasetFilterManager">
     <filter-actions connection-id="aabfcd83-8536-4854-bc70-d139836d2679" dataset="main.Eventos" active-filter-id="" />
@@ -43,9 +46,22 @@
   <component name="DBNavigator.Project.ExecutionManager">
     <retain-sticky-names value="false" />
   </component>
+  <component name="DBNavigator.Project.JavaExecutionManager">
+    <method-browser />
+    <execution-history>
+      <group-entries value="true" />
+      <execution-inputs />
+    </execution-history>
+    <execution-variables-cache />
+  </component>
   <component name="DBNavigator.Project.ObjectQuickFilterManager">
     <last-used-operator value="EQUAL" />
     <filters />
+  </component>
+  <component name="DBNavigator.Project.ScriptExecutionManager" clear-outputs="true">
+    <recently-used-interfaces>
+      <mapping database-type="SQLITE" interface-id="DEFAULT" />
+    </recently-used-interfaces>
   </component>
   <component name="DBNavigator.Project.Settings">
     <connections>
@@ -69,7 +85,7 @@
           <protocol value="" />
           <url-parameters />
           <files>
-            <file path="C:\Users\Ramanzinho\IdeaProjects\Evento\database\banco.db" schema="main" />
+            <file path="C:\Users\Ramanzinho\IdeaProjects\Evento\eventos.db" schema="main" />
           </files>
           <type value="NONE" />
           <user value="" />

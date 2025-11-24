@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component LANGUAGE_LEVEL="JDK_25" inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/target/test-classes"/>
+	<contentEntry url="file://$MODULE_DIR$">
+		<testFolder url="file://$MODULE_DIR$/src/test/java"/>
+		<testFolder url="file://$MODULE_DIR$/src/test/resources"/>
+		<excludeFolder url="file://$MODULE_DIR$/target"/>
+	</contentEntry>
+	<levels>
+		<level name="Maven: org.xerial:sqlite-jdbc:3.46.0.0" value="project"/>
+		<level name="Maven: org.slf4j:slf4j-api:2.0.13" value="project"/>
+		<level name="Maven: org.slf4j:slf4j-nop:2.0.13" value="project"/>
+	</levels>
+</component>

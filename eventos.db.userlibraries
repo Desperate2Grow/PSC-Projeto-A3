@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eclipse-userlibraries>
+  <library name="Maven: org.slf4j:slf4j-api:2.0.13">
+    <archive path="C:/Users/Ramanzinho/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar" />
+  </library>
+  <library name="Maven: org.xerial:sqlite-jdbc:3.46.0.0">
+    <archive path="C:/Users/Ramanzinho/.m2/repository/org/xerial/sqlite-jdbc/3.46.0.0/sqlite-jdbc-3.46.0.0.jar" />
+  </library>
+  <library name="Maven: org.slf4j:slf4j-nop:2.0.13">
+    <archive path="C:/Users/Ramanzinho/.m2/repository/org/slf4j/slf4j-nop/2.0.13/slf4j-nop-2.0.13.jar" />
+  </library>
+  <library name="database">
+    <archive path="C:/Users/Ramanzinho/IdeaProjects/Evento/database" />
+  </library>
+  <library name="database1" />
+  <library name="database2" />
+  <library name="database3" />
+  <library name="database4" />
+  <library name="database5" />
+  <library name="database6" />
+</eclipse-userlibraries>
+
