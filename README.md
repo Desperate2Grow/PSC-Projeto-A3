@@ -258,7 +258,7 @@ basta abrir a classe relacionada nos pacotes descritos acima.
 
 ## Documentação
 
-- Diagrama de classes: arquivo `diagrama de classes.png`.
+- Diagrama de classes: arquivo `Diagrama de Classes.png`.
 
-![Diagrama de classes do sistema](diagrama%20de%20classes.png)
+![Diagrama de classes do sistema](Diagrama%20de%20Classes.png)
 
