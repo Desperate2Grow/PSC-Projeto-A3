@@ -28,7 +28,7 @@ public class SistemaEventosApp {
     /**
      * Método principal da aplicação (Ponto de entrada).
      */
-    static void main(String[] ignoredArgs) {
+   public static void main(String[] ignoredArgs) {
         // Garante que o banco de dados e as tabelas sejam criados e que o
         // usuário administrador padrão seja inserido.
         DatabaseConnection.initializeDatabase();
