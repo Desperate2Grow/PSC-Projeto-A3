@@ -78,7 +78,7 @@ A **classe principal oficial** do sistema é `view.SistemaEventosApp`.
 
 ## Classe principal (ponto de entrada)
 
-```java
+```
 package view;
 
 public class SistemaEventosApp {
@@ -86,6 +86,7 @@ public class SistemaEventosApp {
         // Inicialização do banco e início do fluxo de menus
     }
 }
+````
 
 É executada ao iniciar o programa.
 
@@ -253,3 +254,11 @@ operações em funcionamento e outras ainda em refinamento de regra de negócio
 
 Qualquer dúvida sobre a execução ou sobre uma parte específica do código,
 basta abrir a classe relacionada nos pacotes descritos acima.
+
+
+## Documentação
+
+- Diagrama de classes: arquivo `diagrama de classes.png`.
+
+![Diagrama de classes do sistema](diagrama%20de%20classes.png)
+
